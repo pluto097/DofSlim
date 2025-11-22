@@ -1,22 +1,36 @@
-name: Rust
+name: Build DofSlim (32-bit)
 
 on:
   push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
-
-env:
-  CARGO_TERM_COLOR: always
+  workflow_dispatch:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Build
-      run: cargo build --verbose
-    - name: Run tests
-      run: cargo test --verbose
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust Target
+        run: |
+          rustup target add i686-unknown-linux-gnu
+
+      - name: Install 32-bit Dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y gcc-multilib g++-multilib
+
+      - name: Build bridge
+        run: |
+          cargo build --release --target i686-unknown-linux-gnu --features bridge
+
+      - name: Build channel
+        run: |
+          cargo build --release --target i686-unknown-linux-gnu --features channel
+
+      - name: Upload compiled .so
+        uses: actions/upload-artifact@v4
+        with:
+          name: libdofslim
+          path: target/i686-unknown-linux-gnu/release/libdofslim.so
